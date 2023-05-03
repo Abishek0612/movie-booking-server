@@ -2,6 +2,7 @@ const router = require("express").Router();
 const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const authMiddleware = require("../middlewares/authMiddleware");
 
 //register a new user
 router.post("/register", async (req, res) => {
@@ -48,7 +49,10 @@ router.post("/login", async (req, res) => {
     }
 
     //check if password is correct
-    const validPassword = await bcrypt.compare(re.body.password, user.password);
+    const validPassword = await bcrypt.compare(
+      req.body.password,
+      user.password
+    );
     if (!validPassword) {
       return res.send({
         success: false,
@@ -64,6 +68,24 @@ router.post("/login", async (req, res) => {
       success: true,
       message: "User logged in successfully",
       data: token,
+    });
+  } catch (error) {
+    res.send({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+//get user details by id
+
+router.get("/get-current-user", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.body.userId).select("-password");
+    res.send({
+      success: true,
+      message: "User details fetched successfully",
+      data: user,
     });
   } catch (error) {
     res.send({
